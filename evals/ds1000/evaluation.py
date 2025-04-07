@@ -145,9 +145,10 @@ def evaluation(pred_file, dataset_path='./ds1000_data/', result_dir= None, debug
     score_single_partial = partial(score_single, dataset_path=dataset_path, debug=debug)
     # Each process changes cwd, need to use multi-processing
     with ProcessPoolExecutor(num_workers) as executor:
-        passed = sum(
-            list(executor.map(score_single_partial, raw_preds, preds, refers)))
+        results = list(executor.map(score_single_partial, raw_preds, preds, refers))
 
+    passed = sum(results)
+    details = {str(i):{'is_correct': bool(result)} for i, result in enumerate(results)}
     total = len(preds)
 
     # create dir if not exists
@@ -156,7 +157,7 @@ def evaluation(pred_file, dataset_path='./ds1000_data/', result_dir= None, debug
     out_result_file = os.path.join(result_dir, "result.json")
     with open(out_result_file, "w") as f:
         print(pred_file, f'Accuracy: {round(passed / total * 100, 2)}')
-        f.write(json.dumps({'accuracy': round(passed / total * 100, 2)}))
+        f.write(json.dumps({'accuracy': round(passed / total * 100, 2), 'details': details}))
 
 
 class Command(object):

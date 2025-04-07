@@ -177,8 +177,10 @@ def evaluate_functional_correctness(
 
     # Calculate pass@k.
     total, correct = [], []
-    for result in results.values():
+    details = {}
+    for i,result in enumerate(results.values()):
         passed = [r[1]["passed"] for r in result]
+        details[str(i)] = {'is_correct': bool(passed[0])}
         total.append(len(passed))
         correct.append(sum(passed))
     total = np.array(total)
@@ -203,18 +205,22 @@ def evaluate_functional_correctness(
         fp = gzip.GzipFile(fileobj=open(out_file, "wb"), mode="wb")
         for res in results.values():
             for r in res:
+                # task = r[1].get("task_id", "unknown")
+                # details[task[-1]] = {'is_correct': bool(r[1].get("passed", False))}
                 fp.write((json.dumps(r[1], ensure_ascii=False) + "\n").encode("utf-8"))
     else:
         fp = open(out_file, 'w')
         for res in results.values():
             for r in res:
+                # task = r[1].get("task_id", "unknown")
+                # details[task[-1]] = {'is_correct': bool(r[1].get("passed", False))}
                 fp.write(json.dumps(r[1], ensure_ascii=False) + "\n")
     fp.close()
 
     # write the final pass@k result
     with open(out_result_file, "w") as result_f:
         if evaluate_pass_at_k:
-            result_f.write(json.dumps(pass_at_k))
+            result_f.write(json.dumps({**pass_at_k,'details':details}))
         else:
             result_f.write(json.dumps({
                 "Total: {}".format(np.sum(total)),
